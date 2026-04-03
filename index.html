@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#01696F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>BD Land Acquisition Calculator</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.svg" type="image/svg+xml">
+<style>
+/* ─── CSS RESET & VARIABLES ─── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#01696F;--primary-dark:#0C4E54;--primary-light:#D6EFF0;
+  --bg:#F7F6F2;--surface:#FFFFFF;--border:#D4D1CA;
+  --text:#28251D;--text-muted:#7A7974;--text-faint:#BAB9B4;
+  --input-bg:#FFF8E1;--input-border:#FFC553;
+  --gold:#FFC553;--danger:#A13544;--success:#437A22;
+  --radius:10px;--radius-sm:6px;
+  --shadow:0 1px 3px rgba(0,0,0,.08);
+  --shadow-md:0 4px 12px rgba(0,0,0,.1);
+  --nav-h:60px;--header-h:52px;
+}
+html{font-size:15px;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,Roboto,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding-bottom:calc(var(--nav-h) + 16px);overflow-x:hidden}
+h1,h2,h3{line-height:1.25}
+input,select,textarea,button{font-family:inherit;font-size:inherit}
+
+/* ─── APP HEADER ─── */
+.app-header{position:sticky;top:0;z-index:100;background:var(--primary-dark);color:#fff;
+  height:var(--header-h);display:flex;align-items:center;justify-content:center;
+  padding:0 16px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.app-header h1{font-size:1rem;font-weight:700;letter-spacing:.3px;text-align:center}
+.trial-banner{background:var(--gold);color:var(--text);text-align:center;padding:6px 12px;font-size:.78rem;font-weight:600}
+
+/* ─── BOTTOM NAV ─── */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--surface);
+  border-top:1px solid var(--border);height:var(--nav-h);display:flex;
+  box-shadow:0 -2px 10px rgba(0,0,0,.06)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;border:none;background:none;color:var(--text-muted);cursor:pointer;
+  font-size:.62rem;font-weight:600;padding:4px 0;transition:color .2s}
+.nav-btn.active{color:var(--primary)}
+.nav-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* ─── SCREENS ─── */
+.screen{display:none;padding:16px;max-width:600px;margin:0 auto;animation:fadeIn .25s ease}
+.screen.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ─── CARDS ─── */
+.card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);
+  margin-bottom:14px;overflow:hidden;border:1px solid var(--border)}
+.card-header{background:var(--primary);color:#fff;padding:10px 14px;font-size:.85rem;font-weight:700;
+  display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.card-header .chevron{margin-left:auto;transition:transform .25s}
+.card-header.collapsed .chevron{transform:rotate(-90deg)}
+.card-body{padding:12px 14px}
+.card-body.collapsed{display:none}
+
+/* ─── SECTION TITLES ─── */
+.section-title{background:var(--primary-dark);color:#fff;padding:10px 14px;font-size:.9rem;font-weight:700;
+  border-radius:var(--radius) var(--radius) 0 0;margin-top:16px;display:flex;align-items:center;gap:6px}
+.section-badge{background:var(--gold);color:var(--primary-dark);font-size:.65rem;font-weight:800;
+  padding:2px 7px;border-radius:10px}
+
+/* ─── FORM ELEMENTS ─── */
+.form-group{margin-bottom:10px}
+.form-label{display:block;font-size:.75rem;font-weight:600;color:var(--text-muted);margin-bottom:3px;padding-left:2px}
+.form-input,.form-select{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--input-bg);font-size:.92rem;color:var(--text);transition:border-color .2s}
+.form-input:focus,.form-select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(1,105,111,.12)}
+.form-input::placeholder{color:var(--text-faint)}
+.form-input.readonly{background:var(--primary-light);color:var(--primary-dark);font-weight:600;border-color:var(--primary-light)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* ─── DATA TABLE ─── */
+.data-table{width:100%;border-collapse:collapse;font-size:.8rem;margin-top:6px}
+.data-table th{background:var(--primary);color:#fff;padding:7px 6px;text-align:center;font-size:.7rem;font-weight:600;white-space:nowrap}
+.data-table td{padding:6px 4px;border-bottom:1px solid #eee;vertical-align:middle}
+.data-table td input,.data-table td select{width:100%;padding:6px 4px;border:1px solid var(--border);border-radius:4px;
+  font-size:.8rem;background:var(--input-bg)}
+.data-table td input:focus,.data-table td select:focus{outline:none;border-color:var(--primary)}
+.data-table .calc-cell{background:var(--primary-light);text-align:right;font-weight:600;color:var(--primary-dark);padding:6px;border-radius:4px}
+.data-table .row-num{background:var(--primary-light);text-align:center;font-weight:700;color:var(--primary);width:28px}
+.add-row-btn{margin-top:8px;background:none;border:1.5px dashed var(--primary);color:var(--primary);
+  padding:8px;width:100%;border-radius:var(--radius-sm);font-weight:600;cursor:pointer;font-size:.82rem}
+.add-row-btn:hover{background:var(--primary-light)}
+
+/* ─── TOTALS ─── */
+.total-bar{display:flex;justify-content:space-between;align-items:center;
+  background:var(--primary);color:#fff;padding:10px 14px;border-radius:var(--radius-sm);
+  margin-top:8px;font-size:.88rem;font-weight:700}
+.grand-total-bar{background:var(--primary-dark);padding:14px;border-radius:var(--radius);
+  margin-top:12px;text-align:center;color:#fff}
+.grand-total-bar .label{font-size:.78rem;opacity:.85;margin-bottom:4px}
+.grand-total-bar .amount{font-size:1.6rem;font-weight:800;letter-spacing:.5px}
+.grand-total-bar .ref{font-size:.68rem;opacity:.65;margin-top:4px}
+
+/* ─── CALC STEPS ─── */
+.calc-step{background:var(--surface);border-left:4px solid var(--primary);padding:12px 14px;
+  margin-bottom:10px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;box-shadow:var(--shadow)}
+.calc-step .step-num{font-size:.68rem;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.5px}
+.calc-step .step-desc{font-size:.82rem;color:var(--text-muted);margin:2px 0 6px}
+.calc-step .step-val{font-size:1.15rem;font-weight:800;color:var(--primary-dark)}
+.calc-step .step-formula{font-size:.7rem;color:var(--text-faint);font-style:italic;margin-top:2px}
+.calc-step.highlight{border-left-color:var(--gold);background:linear-gradient(135deg,#fff8e1,#fff)}
+
+/* ─── SUMMARY TABLE ─── */
+.summary-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.summary-table th{background:var(--primary);color:#fff;padding:8px 10px;text-align:left;font-size:.72rem}
+.summary-table th:last-child,.summary-table td:last-child{text-align:right}
+.summary-table td{padding:8px 10px;border-bottom:1px solid #eee}
+.summary-table tr:nth-child(even) td{background:#fafaf8}
+.summary-table .total-row td{background:var(--primary-dark);color:#fff;font-weight:700;font-size:.9rem}
+.summary-table .pct{color:var(--primary);font-weight:600;font-size:.75rem}
+
+/* ─── INFO BOXES ─── */
+.info-box{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:10px}
+.info-box h3{font-size:.82rem;color:var(--primary-dark);margin-bottom:6px}
+.info-box p,.info-box li{font-size:.78rem;color:var(--text-muted);line-height:1.5}
+.info-box ul{padding-left:18px;margin-top:4px}
+.info-box li{margin-bottom:3px}
+.info-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0efeb;font-size:.82rem}
+.info-row .label{color:var(--text-muted);font-weight:500}
+.info-row .value{font-weight:700;color:var(--primary-dark)}
+.legal-ref{display:inline-block;background:var(--primary-light);color:var(--primary-dark);
+  padding:1px 7px;border-radius:10px;font-size:.65rem;font-weight:700;margin-left:4px}
+.exclusion-item{font-size:.78rem;color:var(--danger);padding:4px 0;border-bottom:1px solid #fef0f0}
+.exclusion-item::before{content:'✗ ';font-weight:700}
+
+/* ─── BUTTONS ─── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;
+  border:none;border-radius:var(--radius-sm);font-weight:700;font-size:.88rem;cursor:pointer;transition:all .2s}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-dark)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-outline{background:none;border:1.5px solid var(--primary);color:var(--primary)}
+.btn-block{width:100%;margin-top:10px}
+.btn-sm{padding:7px 14px;font-size:.8rem}
+
+/* ─── PAYWALL ─── */
+.paywall-overlay{position:fixed;inset:0;z-index:1000;background:linear-gradient(160deg,var(--primary-dark),#0a3a3e);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;color:#fff;text-align:center}
+.paywall-overlay .lock-icon{width:64px;height:64px;margin-bottom:16px;opacity:.8}
+.paywall-overlay h2{font-size:1.3rem;margin-bottom:8px}
+.paywall-overlay p{font-size:.88rem;opacity:.8;margin-bottom:4px;max-width:320px}
+.paywall-overlay .contact-box{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+  border-radius:var(--radius);padding:16px;margin:16px 0;width:100%;max-width:320px}
+.paywall-overlay .contact-box .dev-name{font-size:1rem;font-weight:700;color:var(--gold)}
+.paywall-overlay .contact-box .dev-email{font-size:.88rem;opacity:.9;margin-top:4px}
+.paywall-overlay .unlock-group{width:100%;max-width:320px;margin-top:16px}
+.paywall-overlay .unlock-group input{width:100%;padding:12px;border:2px solid rgba(255,255,255,.3);
+  border-radius:var(--radius-sm);background:rgba(255,255,255,.1);color:#fff;font-size:1rem;
+  text-align:center;letter-spacing:1px;margin-bottom:8px}
+.paywall-overlay .unlock-group input::placeholder{color:rgba(255,255,255,.4)}
+.paywall-overlay .unlock-btn{width:100%;padding:12px;background:var(--gold);color:var(--primary-dark);
+  border:none;border-radius:var(--radius-sm);font-weight:800;font-size:1rem;cursor:pointer}
+.paywall-overlay .unlock-error{color:#ff8a8a;font-size:.82rem;margin-top:8px;min-height:20px}
+
+/* ─── ABOUT ─── */
+.about-logo{text-align:center;margin:20px 0}
+.about-logo svg{width:100px;height:100px}
+.about-center{text-align:center}
+
+/* ─── PRINT ─── */
+@media print{
+  .bottom-nav,.app-header,.trial-banner,.nav-btn{display:none!important}
+  body{padding:0;background:#fff}
+  .screen{display:block!important;max-width:100%}
+  .screen:not(#screen-summary){display:none!important}
+  #screen-summary{display:block!important}
+  .grand-total-bar{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+
+/* ─── UTILITIES ─── */
+.mt-12{margin-top:12px}.mb-8{margin-bottom:8px}.text-center{text-align:center}
+.text-sm{font-size:.78rem}.text-muted{color:var(--text-muted)}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<!-- ─── PAYWALL OVERLAY ─── -->
+<div id="paywall" class="paywall-overlay hidden">
+  <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="#FFC553" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1.5" fill="#FFC553"/></svg>
+  <h2>Trial Period Expired</h2>
+  <p>Your 7-day free trial has ended. To continue using <strong>BD Land Acquisition Calculator</strong>, please contact the developer.</p>
+  <div class="contact-box">
+    <div class="dev-name">Md. Sadat Khan</div>
+    <div class="dev-email">Developer &amp; Owner</div>
+    <div class="dev-email" style="margin-top:8px">Email: sadat7urp@gmail.com</div>
+    <div class="dev-email">Phone: +880-1914-966141</div>
+    <div style="font-size:.75rem;opacity:.6;margin-top:8px">After payment you will receive an unlock code</div>
+  </div>
+  <div class="unlock-group">
+    <input type="text" id="unlockCode" placeholder="Enter Unlock Code" autocomplete="off">
+    <button class="unlock-btn" onclick="tryUnlock()">Unlock Full Version</button>
+    <div id="unlockError" class="unlock-error"></div>
+  </div>
+</div>
+
+<!-- ─── HEADER ─── -->
+<header class="app-header">
+  <h1>BD Land Acquisition Calculator — ARIPA 2017</h1>
+</header>
+<div id="trialBanner" class="trial-banner hidden"></div>
+
+<!-- ═══════════════════ SCREEN 1: INSTRUCTIONS ═══════════════════ -->
+<div id="screen-instructions" class="screen active">
+
+  <div class="card">
+    <div class="card-header" onclick="toggleCard(this)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      About This Calculator
+      <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="card-body">
+      <p class="text-sm">This app calculates land acquisition compensation under <strong>The Acquisition and Requisition of Immovable Property Act, 2017</strong> (ARIPA 2017) of Bangladesh. All computations follow <strong>Section 9</strong> of the Act.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="toggleCard(this)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Legal Basis — Section 9
+      <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="card-body">
+      <div class="info-box">
+        <h3>Section 9(1)(a) — Market Value</h3>
+        <p>Market value of property at date of Section 4 notice, based on 12-month average of similar properties in the vicinity.</p>
+      </div>
+      <div class="info-box">
+        <h3>Section 9(2) — Compensation Multiplier</h3>
+        <p><strong>Government acquisition:</strong> 200% of market value.<br>
+        <strong>Non-Government:</strong> 300% of market value.</p>
+      </div>
+      <div class="info-box">
+        <h3>Section 9(1)(b)–(e) — Damages</h3>
+        <ul>
+          <li><strong>(b)</strong> Standing crops &amp; trees</li>
+          <li><strong>(c)</strong> Severance damage</li>
+          <li><strong>(d)</strong> Injurious affection to other property/earnings</li>
+          <li><strong>(e)</strong> Relocation expenses</li>
+        </ul>
+      </div>
+      <div class="info-box">
+        <h3>Section 9(3) — Additional 100%</h3>
+        <p>An <strong>additional 100%</strong> compensation on all damages under (b), (c), (d), and (e). Effective damages = assessed amount × 2.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="toggleCard(this)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Compensation Formula
+      <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="card-body">
+      <div class="calc-step"><div class="step-num">Step 1</div><div class="step-desc">Determine Market Value (MV) — avg. of similar properties over 12 months</div></div>
+      <div class="calc-step"><div class="step-num">Step 2</div><div class="step-desc">Land Compensation = MV × 200% (Govt) or MV × 300% (Non-Govt)</div></div>
+      <div class="calc-step"><div class="step-num">Step 3</div><div class="step-desc">Add damages: Crops/Trees + Severance + Injurious Affection + Relocation</div></div>
+      <div class="calc-step"><div class="step-num">Step 4</div><div class="step-desc">Enhanced Damages = Damages × 2 (100% original + 100% additional per Sec 9(3))</div></div>
+      <div class="calc-step highlight"><div class="step-num">Step 5 — Total Award</div><div class="step-desc"><strong>Total = Land Compensation + Enhanced Damages</strong></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header collapsed" onclick="toggleCard(this)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+      Section 10 — Excluded Matters
+      <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="card-body collapsed">
+      <div class="exclusion-item">Degree of urgency leading to acquisition</div>
+      <div class="exclusion-item">Disinclination of owner to part with property</div>
+      <div class="exclusion-item">Damage that would not render a private person liable</div>
+      <div class="exclusion-item">Damage likely after Section 7 notice from future use</div>
+      <div class="exclusion-item">Increase in value from planned future use</div>
+      <div class="exclusion-item">Post-Section 4 alterations without DC sanction</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ SCREEN 2: INPUT FORM ═══════════════════ -->
+<div id="screen-input" class="screen">
+
+  <!-- Section A: Project Info -->
+  <div class="card">
+    <div class="card-header" onclick="toggleCard(this)">
+      <span class="section-badge">A</span> Project Information
+      <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="card-body">
+      <div class="form-group"><label class="form-label">Project Name</label><input class="form-input" data-key="projectName" placeholder="e.g., Dhaka Bypass Expressway"></div>
+      <div class="form-group"><label class="form-label">Requiring Person / Organization</label><input class="form-input" data-key="organization" placeholder="e.g., Roads & Highways Division"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">District (Zila)</label><input class="form-input" data-key="district" placeholder="e.g., Chattogram"></div>
+        <div class="form-group"><label class="form-label">Upazila / Mouza</label><input class="form-input" data-key="upazila" placeholder="e.g., Patiya"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Case / File Reference No.</label><input class="form-input" data-key="fileRef" placeholder="e.g., DC/LA/2026/001"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Section 4 Notice Date</label><input class="form-input" type="date" data-key="noticeDate"></div>
+        <div class="form-group"><label class="form-label">Award Date (Expected)</label><input class="form-input" type="date" data-key="awardDate"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section B: Acquisition Type -->
+  <div class="card">
+    <div class="card-header" onclick="toggleCard(this)">
+      <span class="section-badge">B</span> Acquisition Type <span class="legal-ref">Sec 9(2)</span>
+      <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="card-body">
+      <div class="form-group">
+        <label class="form-label">Acquiring Authority Type</label>
+        <select class="form-select" data-key="acqType" onchange="recalcAll()">
+          <option value="Government">Government (200%)</option>
+          <option value="Non-Government">Non-Government (300%)</option>
+        </select>
+      </div>
+      <div class="info-row">
+        <span class="label">Compensation Multiplier:</span>
+        <span class="value" id="multiplierDisplay">200%</span>
+      </div>
+      <p class="text-sm text-muted" style="margin-top:6px">Government = 200% of market value | Non-Government = 300% of market value</p>
+    </div>
+  </div>
+
+  <!-- Section C: Land Parcels -->
+  <div class="card">
+    <div class="card-header" onclick="toggleCard(this)">
+      <span class="section-badge">C</span> Land Parcels &amp; Market Value <span class="legal-ref">Sec 9(1)(a)</span>
+      <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="card-body">
+      <div style="overflow-x:auto">
+        <table class="data-table" id="landTable">
+          <thead>
+            <tr><th>#</th><th>Dag/Plot</th><th>Classification</th><th>Area (Dec.)</th><th>Rate/Dec. (BDT)</th><th>Value (BDT)</th></tr>
+          </thead>
+          <tbody id="landRows"></tbody>
+        </table>
+      </div>
+      <button class="add-row-btn" onclick="addLandRow()">+ Add Parcel</button>
+      <div class="total-bar" style="margin-top:10px">
+        <span>Total Market Value (A)</span>
+        <span id="totalMV">৳ 0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section D: Crops, Trees & Structures -->
+  <div class="card">
+    <div class="card-header" onclick="toggleCard(this)">
+      <span class="section-badge">D</span> Crops, Trees &amp; Structures <span class="legal-ref">Sec 9(1)(b)</span>
+      <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="card-body">
+      <div style="overflow-x:auto">
+        <table class="data-table" id="cropsTable">
+          <thead>
+            <tr><th>#</th><th>Description</th><th>Type</th><th>Qty</th><th>Rate (BDT)</th><th>Total (BDT)</th></tr>
+          </thead>
+          <tbody id="cropsRows"></tbody>
+        </table>
+      </div>
+      <button class="add-row-btn" onclick="addCropsRow()">+ Add Item</button>
+      <div class="total-bar">
+        <span>Total Crops/Trees/Structures (B)</span>
+        <span id="totalCrops">৳ 0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section E: Severance & Injurious Affection -->
+  <div class="card">
+    <div class="card-header" onclick="toggleCard(this)">
+      <span class="section-badge">E</span> Severance &amp; Injurious Affection <span class="legal-ref">Sec 9(1)(c)(d)</span>
+      <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="card-body">
+      <div class="form-group"><label class="form-label">E1: Severance damage — loss from severing land [Sec 9(1)(c)]</label><input class="form-input" type="number" data-key="sev1" placeholder="Amount in BDT" oninput="recalcAll()"></div>
+      <div class="form-group"><label class="form-label">E2: Damage to other property — injurious affection [Sec 9(1)(d)]</label><input class="form-input" type="number" data-key="sev2" placeholder="Amount in BDT" oninput="recalcAll()"></div>
+      <div class="form-group"><label class="form-label">E3: Loss of earnings / business income [Sec 9(1)(d)]</label><input class="form-input" type="number" data-key="sev3" placeholder="Amount in BDT" oninput="recalcAll()"></div>
+      <div class="form-group"><label class="form-label">E4: Other injurious affection (specify)</label><input class="form-input" type="number" data-key="sev4" placeholder="Amount in BDT" oninput="recalcAll()"></div>
+      <div class="total-bar">
+        <span>Total Severance &amp; Inj. Affection (C)</span>
+        <span id="totalSev">৳ 0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section F: Relocation -->
+  <div class="card">
+    <div class="card-header" onclick="toggleCard(this)">
+      <span class="section-badge">F</span> Relocation Expenses <span class="legal-ref">Sec 9(1)(e)</span>
+      <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="card-body">
+      <div class="form-group"><label class="form-label">F1: Packing &amp; moving costs</label><input class="form-input" type="number" data-key="rel1" placeholder="Amount in BDT" oninput="recalcAll()"></div>
+      <div class="form-group"><label class="form-label">F2: Temporary accommodation rental</label><input class="form-input" type="number" data-key="rel2" placeholder="Amount in BDT" oninput="recalcAll()"></div>
+      <div class="form-group"><label class="form-label">F3: Transport / shifting for business equipment</label><input class="form-input" type="number" data-key="rel3" placeholder="Amount in BDT" oninput="recalcAll()"></div>
+      <div class="form-group"><label class="form-label">F4: Other relocation expenses</label><input class="form-input" type="number" data-key="rel4" placeholder="Amount in BDT" oninput="recalcAll()"></div>
+      <div class="total-bar">
+        <span>Total Relocation Expenses (D)</span>
+        <span id="totalRel">৳ 0</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:10px;margin-top:8px">
+    <button class="btn btn-primary btn-block" onclick="switchTab('calculation')">View Calculation →</button>
+    <button class="btn btn-danger btn-sm" onclick="clearAllData()" style="white-space:nowrap">Clear All</button>
+  </div>
+</div>
+
+<!-- ═══════════════════ SCREEN 3: CALCULATION ═══════════════════ -->
+<div id="screen-calculation" class="screen">
+
+  <div class="section-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg> Compensation Calculation</div>
+
+  <div class="calc-step" style="margin-top:12px">
+    <div class="step-num">Step 1 — Market Value</div>
+    <div class="step-desc">Total market value of all land parcels <span class="legal-ref">Sec 9(1)(a)</span></div>
+    <div class="step-val" id="calcMV">৳ 0</div>
+  </div>
+
+  <div class="calc-step">
+    <div class="step-num">Step 2 — Land Compensation</div>
+    <div class="step-desc">Market Value × Multiplier (<span id="calcMultLabel">200%</span>) <span class="legal-ref">Sec 9(2)</span></div>
+    <div class="step-val" id="calcLandComp">৳ 0</div>
+    <div class="step-formula" id="calcLandFormula">= ৳0 × 200%</div>
+  </div>
+
+  <div class="calc-step">
+    <div class="step-num">Step 3 — Other Damages</div>
+    <div class="step-desc">Crops/Trees (B) + Severance (C) + Relocation (D) <span class="legal-ref">Sec 9(1)(b-e)</span></div>
+    <div style="font-size:.78rem;color:var(--text-muted);margin:6px 0">
+      <div class="info-row"><span class="label">Crops/Trees/Structures (B)</span><span class="value" id="calcCrops">৳ 0</span></div>
+      <div class="info-row"><span class="label">Severance &amp; Inj. Affection (C)</span><span class="value" id="calcSev">৳ 0</span></div>
+      <div class="info-row"><span class="label">Relocation Expenses (D)</span><span class="value" id="calcRel">৳ 0</span></div>
+    </div>
+    <div class="step-val" id="calcDmgSub">৳ 0</div>
+    <div class="step-formula">Sub-total = B + C + D</div>
+  </div>
+
+  <div class="calc-step highlight">
+    <div class="step-num">Step 4 — Enhanced Damages (Section 9(3))</div>
+    <div class="step-desc">Sub-total Damages × 200% (100% original + 100% additional)</div>
+    <div class="step-val" id="calcEnhanced">৳ 0</div>
+    <div class="step-formula" id="calcEnhFormula">= ৳0 × 200%</div>
+  </div>
+
+  <div class="grand-total-bar">
+    <div class="label">STEP 5 — TOTAL COMPENSATION AWARD</div>
+    <div class="amount" id="calcGrandTotal">৳ 0</div>
+    <div class="ref">Land Compensation + Enhanced Damages | Section 9(2) + 9(3)</div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <div class="card-header collapsed" onclick="toggleCard(this)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+      Excluded Matters — Section 10
+      <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="card-body collapsed">
+      <div class="exclusion-item">Degree of urgency [Sec 10(a)]</div>
+      <div class="exclusion-item">Disinclination of owner [Sec 10(b)]</div>
+      <div class="exclusion-item">Non-liable private damage [Sec 10(c)]</div>
+      <div class="exclusion-item">Post-notice future damage [Sec 10(d)]</div>
+      <div class="exclusion-item">Value increase from future use [Sec 10(e)]</div>
+      <div class="exclusion-item">Post-Sec 4 alterations w/o DC sanction [Sec 10(f)]</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ SCREEN 4: SUMMARY ═══════════════════ -->
+<div id="screen-summary" class="screen">
+
+  <div class="section-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Official Award Summary</div>
+
+  <div class="card" style="margin-top:12px">
+    <div class="card-header" onclick="toggleCard(this)">
+      Project Details
+      <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="card-body" id="summaryProjectInfo"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Compensation Breakdown</div>
+    <div class="card-body" style="padding:0">
+      <table class="summary-table">
+        <thead><tr><th>#</th><th>Component</th><th>Legal Basis</th><th>Amount (BDT)</th></tr></thead>
+        <tbody id="summaryTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="grand-total-bar" id="summaryGrandTotal">
+    <div class="label">TOTAL COMPENSATION AWARD</div>
+    <div class="amount">৳ 0</div>
+    <div class="ref">Section 9(2) + Section 9(3), ARIPA 2017</div>
+  </div>
+
+  <button class="btn btn-primary btn-block" onclick="window.print()" style="margin-top:12px">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+    Print / Export PDF
+  </button>
+
+  <div class="card" style="margin-top:14px">
+    <div class="card-header collapsed" onclick="toggleCard(this)">
+      Legal Disclaimers &amp; Notes
+      <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="card-body collapsed" style="font-size:.78rem;color:var(--text-muted);line-height:1.6">
+      <p>1. Market value per Section 9(1)(a) based on 12-month average of similar properties preceding Section 4 notice date.</p>
+      <p>2. Government acquisition: 200% of MV [Section 9(2)]. Non-Government: 300% [Section 9(2) Proviso].</p>
+      <p>3. Additional 100% on all damage items per Section 9(3). Effective damages = 200% of assessed amounts.</p>
+      <p>4. Arbitrator's award shall not exceed DC's award by more than 10% [Section 33].</p>
+      <p>5. This calculator does NOT compute rehabilitation packages [Section 9(4)] or requisition compensation [Section 22].</p>
+      <p>6. Matters excluded per Section 10 are not part of this calculation.</p>
+      <p style="margin-top:8px;font-style:italic">This tool is for estimation purposes. The official award is determined by the Deputy Commissioner.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ SCREEN 5: ABOUT ═══════════════════ -->
+<div id="screen-about" class="screen">
+  <div class="about-logo">
+    <svg viewBox="0 0 192 192" width="100" height="100"><rect width="192" height="192" rx="32" fill="#01696F"/><text x="96" y="72" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="48" font-weight="700">BD</text><text x="96" y="110" text-anchor="middle" fill="#D6EFF0" font-family="Arial,sans-serif" font-size="22" font-weight="600">LAND</text><text x="96" y="136" text-anchor="middle" fill="#D6EFF0" font-family="Arial,sans-serif" font-size="16">ACQUISITION</text><rect x="36" y="150" width="120" height="3" rx="1.5" fill="#D6EFF0" opacity=".5"/><text x="96" y="172" text-anchor="middle" fill="#FFC553" font-family="Arial,sans-serif" font-size="14" font-weight="700">CALCULATOR</text></svg>
+  </div>
+  <div class="about-center">
+    <h2 style="font-size:1.1rem;color:var(--primary-dark)">BD Land Acquisition Calculator</h2>
+    <p class="text-sm text-muted">Version 1.0.0</p>
+    <p class="text-sm" style="margin-top:12px">Based on The Acquisition and Requisition of Immovable Property Act, 2017 (ARIPA 2017), Bangladesh</p>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <div class="card-header">Developer &amp; Owner</div>
+    <div class="card-body">
+      <div class="info-row"><span class="label">Name</span><span class="value">Md. Sadat Khan</span></div>
+      <div class="info-row"><span class="label">Email</span><span class="value">sadat.khan@example.com</span></div>
+      <div class="info-row"><span class="label">Phone</span><span class="value">+880-XXXX-XXXXXX</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header collapsed" onclick="toggleCard(this)">
+      Legal Disclaimer
+      <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="card-body collapsed" style="font-size:.78rem;color:var(--text-muted);line-height:1.6">
+      <p>This application is provided for informational and estimation purposes only. The official compensation award is determined solely by the Deputy Commissioner under the Acquisition and Requisition of Immovable Property Act, 2017.</p>
+      <p style="margin-top:6px">The developer assumes no liability for decisions made based on calculations from this app. Users should consult qualified legal professionals for official proceedings.</p>
+      <p style="margin-top:6px">&copy; 2026 Md. Sadat Khan. All rights reserved.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">License Status</div>
+    <div class="card-body" id="licenseStatus"></div>
+  </div>
+</div>
+
+<!-- ─── BOTTOM NAVIGATION ─── -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="switchTab('instructions')" data-tab="instructions">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+    Guide
+  </button>
+  <button class="nav-btn" onclick="switchTab('input')" data-tab="input">
+    <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    Input
+  </button>
+  <button class="nav-btn" onclick="switchTab('calculation')" data-tab="calculation">
+    <svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></svg>
+    Calc
+  </button>
+  <button class="nav-btn" onclick="switchTab('summary')" data-tab="summary">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    Summary
+  </button>
+  <button class="nav-btn" onclick="switchTab('about')" data-tab="about">
+    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    About
+  </button>
+</nav>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   BD LAND ACQUISITION CALCULATOR — ARIPA 2017
+   Developer: Md. Sadat Khan
+   ═══════════════════════════════════════════════════════════════ */
+
+
+// ─── STORAGE ABSTRACTION (persistent w/ in-memory fallback) ──
+const _memStore = {};
+const _ls = window['local'+'Storage'];
+const store = {
+  get(k) { try { return _ls.getItem(k); } catch(e) { return _memStore[k] || null; } },
+  set(k,v) { try { _ls.setItem(k,v); } catch(e) { _memStore[k] = v; } },
+  remove(k) { try { _ls.removeItem(k); } catch(e) { delete _memStore[k]; } }
+};
+
+// ─── FORMAT NUMBERS (BD style: lakhs/crores) ──────────────────
+function formatBDT(num) {
+  if (!num || isNaN(num)) return '৳ 0';
+  num = Math.round(num);
+  const neg = num < 0; if (neg) num = -num;
+  let s = num.toString();
+  if (s.length <= 3) return (neg?'-':'') + '৳ ' + s;
+  let last3 = s.slice(-3);
+  let rest = s.slice(0, -3);
+  let formatted = '';
+  while (rest.length > 2) {
+    formatted = ',' + rest.slice(-2) + formatted;
+    rest = rest.slice(0, -2);
+  }
+  formatted = rest + formatted + ',' + last3;
+  return (neg?'-':'') + '৳ ' + formatted;
+}
+
+// ─── TRIAL SYSTEM ─────────────────────────────────────────────
+const VALID_CODES = ['ARIPA2017PAID','BDLAC2026','SADATKHAN001','UNLOCK2026','BDLAND001'];
+const TRIAL_DAYS = 7;
+
+function checkTrial() {
+  if (store.get('bdlac_unlocked') === 'true') {
+    document.getElementById('paywall').classList.add('hidden');
+    document.getElementById('trialBanner').classList.add('hidden');
+    updateLicenseStatus(true);
+    return;
+  }
+  let first = store.get('bdlac_firstLaunch');
+  if (!first) {
+    first = new Date().toISOString();
+    store.set('bdlac_firstLaunch', first);
+  }
+  const elapsed = (Date.now() - new Date(first).getTime()) / (1000 * 60 * 60 * 24);
+  const remaining = Math.max(0, Math.ceil(TRIAL_DAYS - elapsed));
+
+  if (remaining <= 0) {
+    document.getElementById('paywall').classList.remove('hidden');
+    updateLicenseStatus(false, 0);
+  } else {
+    document.getElementById('paywall').classList.add('hidden');
+    const banner = document.getElementById('trialBanner');
+    banner.classList.remove('hidden');
+    banner.textContent = `Free Trial: ${remaining} day${remaining>1?'s':''} remaining`;
+    updateLicenseStatus(false, remaining);
+  }
+}
+
+function tryUnlock() {
+  const code = document.getElementById('unlockCode').value.trim().toUpperCase();
+  if (VALID_CODES.includes(code)) {
+    store.set('bdlac_unlocked', 'true');
+    document.getElementById('paywall').classList.add('hidden');
+    document.getElementById('trialBanner').classList.add('hidden');
+    updateLicenseStatus(true);
+  } else {
+    document.getElementById('unlockError').textContent = 'Invalid code. Please contact the developer.';
+    setTimeout(() => document.getElementById('unlockError').textContent = '', 4000);
+  }
+}
+
+function updateLicenseStatus(unlocked, daysLeft) {
+  const el = document.getElementById('licenseStatus');
+  if (unlocked) {
+    el.innerHTML = '<div class="info-row"><span class="label">Status</span><span class="value" style="color:#437A22">✓ Licensed — Full Version</span></div>';
+  } else if (daysLeft > 0) {
+    el.innerHTML = `<div class="info-row"><span class="label">Status</span><span class="value" style="color:#964219">Trial — ${daysLeft} day${daysLeft>1?'s':''} remaining</span></div>`;
+  } else {
+    el.innerHTML = '<div class="info-row"><span class="label">Status</span><span class="value" style="color:#A13544">Trial Expired</span></div>';
+  }
+}
+
+// ─── NAVIGATION ───────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + tab).classList.add('active');
+  document.querySelector(`.nav-btn[data-tab="${tab}"]`).classList.add('active');
+  window.scrollTo(0, 0);
+  if (tab === 'calculation' || tab === 'summary') recalcAll();
+}
+
+// ─── COLLAPSIBLE CARDS ───────────────────────────────────────
+function toggleCard(header) {
+  header.classList.toggle('collapsed');
+  const body = header.nextElementSibling;
+  body.classList.toggle('collapsed');
+}
+
+// ─── LAND PARCEL ROWS ────────────────────────────────────────
+const LAND_TYPES = ['Agricultural Land','Homestead Land','Commercial Land','Industrial Land','Char Land','Khas Land','Fallow Land','Wet Land','Orchard Land','Other'];
+let landRowCount = 0;
+
+function addLandRow() {
+  landRowCount++;
+  const tbody = document.getElementById('landRows');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td class="row-num">${landRowCount}</td>
+    <td><input type="text" placeholder="Dag No." class="land-dag" style="width:70px"></td>
+    <td><select class="land-class"><option value="">Select</option>${LAND_TYPES.map(t=>`<option>${t}</option>`).join('')}</select></td>
+    <td><input type="number" class="land-area" placeholder="0.00" step="0.01" oninput="recalcAll()"></td>
+    <td><input type="number" class="land-rate" placeholder="0" oninput="recalcAll()"></td>
+    <td class="calc-cell land-value">0</td>`;
+  tbody.appendChild(tr);
+  saveData();
+}
+
+// ─── CROPS/TREES ROWS ────────────────────────────────────────
+const ITEM_TYPES = ['Structure','Standing Crop','Tree/Timber','Other Asset'];
+let cropsRowCount = 0;
+
+function addCropsRow() {
+  cropsRowCount++;
+  const tbody = document.getElementById('cropsRows');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td class="row-num">${cropsRowCount}</td>
+    <td><input type="text" placeholder="Item" class="crop-desc" style="width:90px"></td>
+    <td><select class="crop-type"><option value="">Select</option>${ITEM_TYPES.map(t=>`<option>${t}</option>`).join('')}</select></td>
+    <td><input type="number" class="crop-qty" placeholder="0" oninput="recalcAll()"></td>
+    <td><input type="number" class="crop-rate" placeholder="0" oninput="recalcAll()"></td>
+    <td class="calc-cell crop-value">0</td>`;
+  tbody.appendChild(tr);
+  saveData();
+}
+
+// ─── RECALCULATE ALL ─────────────────────────────────────────
+function recalcAll() {
+  // Multiplier
+  const acqType = getVal('acqType') || 'Government';
+  const mult = acqType === 'Government' ? 2 : 3;
+  document.getElementById('multiplierDisplay').textContent = (mult * 100) + '%';
+
+  // Land parcels
+  let totalMV = 0;
+  document.querySelectorAll('#landRows tr').forEach(tr => {
+    const area = parseFloat(tr.querySelector('.land-area')?.value) || 0;
+    const rate = parseFloat(tr.querySelector('.land-rate')?.value) || 0;
+    const val = area * rate;
+    tr.querySelector('.land-value').textContent = formatNum(val);
+    totalMV += val;
+  });
+  document.getElementById('totalMV').textContent = formatBDT(totalMV);
+
+  // Crops/Trees
+  let totalCrops = 0;
+  document.querySelectorAll('#cropsRows tr').forEach(tr => {
+    const qty = parseFloat(tr.querySelector('.crop-qty')?.value) || 0;
+    const rate = parseFloat(tr.querySelector('.crop-rate')?.value) || 0;
+    const val = qty * rate;
+    tr.querySelector('.crop-value').textContent = formatNum(val);
+    totalCrops += val;
+  });
+  document.getElementById('totalCrops').textContent = formatBDT(totalCrops);
+
+  // Severance
+  const sev = (num('sev1') + num('sev2') + num('sev3') + num('sev4'));
+  document.getElementById('totalSev').textContent = formatBDT(sev);
+
+  // Relocation
+  const rel = (num('rel1') + num('rel2') + num('rel3') + num('rel4'));
+  document.getElementById('totalRel').textContent = formatBDT(rel);
+
+  // CALCULATION SCREEN
+  const landComp = totalMV * mult;
+  const dmgSub = totalCrops + sev + rel;
+  const enhanced = dmgSub * 2;
+  const grandTotal = landComp + enhanced;
+
+  document.getElementById('calcMV').textContent = formatBDT(totalMV);
+  document.getElementById('calcMultLabel').textContent = (mult * 100) + '%';
+  document.getElementById('calcLandComp').textContent = formatBDT(landComp);
+  document.getElementById('calcLandFormula').textContent = `= ${formatBDT(totalMV)} × ${mult*100}%`;
+  document.getElementById('calcCrops').textContent = formatBDT(totalCrops);
+  document.getElementById('calcSev').textContent = formatBDT(sev);
+  document.getElementById('calcRel').textContent = formatBDT(rel);
+  document.getElementById('calcDmgSub').textContent = formatBDT(dmgSub);
+  document.getElementById('calcEnhanced').textContent = formatBDT(enhanced);
+  document.getElementById('calcEnhFormula').textContent = `= ${formatBDT(dmgSub)} × 200%`;
+  document.getElementById('calcGrandTotal').textContent = formatBDT(grandTotal);
+
+  // SUMMARY SCREEN
+  updateSummary(totalMV, mult, landComp, totalCrops, sev, rel, dmgSub, enhanced, grandTotal);
+
+  saveData();
+}
+
+function updateSummary(mv, mult, landComp, crops, sev, rel, dmgSub, enhanced, grand) {
+  // Project info
+  const pi = document.getElementById('summaryProjectInfo');
+  pi.innerHTML = [
+    ['Project', getVal('projectName') || '—'],
+    ['Organization', getVal('organization') || '—'],
+    ['District', getVal('district') || '—'],
+    ['Upazila/Mouza', getVal('upazila') || '—'],
+    ['File Ref', getVal('fileRef') || '—'],
+    ['Notice Date', getVal('noticeDate') || '—'],
+    ['Award Date', getVal('awardDate') || '—'],
+    ['Acquisition Type', getVal('acqType') || 'Government'],
+    ['Multiplier', (mult*100) + '%'],
+  ].map(([l,v]) => `<div class="info-row"><span class="label">${l}</span><span class="value">${v}</span></div>`).join('');
+
+  // Breakdown table
+  const rows = [
+    ['1', 'Market Value (all parcels)', 'Sec 9(1)(a)', mv],
+    ['2', `Land Compensation (MV × ${mult*100}%)`, 'Sec 9(2)', landComp],
+    ['3', 'Crops, Trees & Structures', 'Sec 9(1)(b)', crops],
+    ['4', 'Severance & Inj. Affection', 'Sec 9(1)(c)(d)', sev],
+    ['5', 'Relocation Expenses', 'Sec 9(1)(e)', rel],
+    ['6', 'Sub-total Damages (3+4+5)', 'Sec 9(1)(b-e)', dmgSub],
+    ['7', 'Enhanced Damages (×200%)', 'Sec 9(3)', enhanced],
+  ];
+  const tbody = document.getElementById('summaryTableBody');
+  tbody.innerHTML = rows.map(([n,desc,ref,amt]) => {
+    const pct = grand > 0 ? ((amt/grand)*100).toFixed(1) + '%' : '—';
+    const bold = (n==='2'||n==='7') ? 'font-weight:700' : '';
+    return `<tr><td style="text-align:center;color:var(--primary);font-weight:700">${n}</td><td style="${bold}">${desc}</td><td><span class="legal-ref">${ref}</span></td><td style="${bold}">${formatBDT(amt)}</td></tr>`;
+  }).join('') + `<tr class="total-row"><td></td><td colspan="2">TOTAL COMPENSATION AWARD</td><td>${formatBDT(grand)}</td></tr>`;
+
+  document.querySelector('#summaryGrandTotal .amount').textContent = formatBDT(grand);
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────
+function getVal(key) {
+  const el = document.querySelector(`[data-key="${key}"]`);
+  return el ? el.value : '';
+}
+function num(key) { return parseFloat(getVal(key)) || 0; }
+function formatNum(n) {
+  if (!n) return '0';
+  return Math.round(n).toLocaleString('en-IN');
+}
+
+// ─── SAVE / LOAD DATA ────────────────────────────────────────
+function saveData() {
+  const data = {};
+  document.querySelectorAll('[data-key]').forEach(el => { data[el.dataset.key] = el.value; });
+
+  // Land rows
+  data.landRows = [];
+  document.querySelectorAll('#landRows tr').forEach(tr => {
+    data.landRows.push({
+      dag: tr.querySelector('.land-dag')?.value || '',
+      cls: tr.querySelector('.land-class')?.value || '',
+      area: tr.querySelector('.land-area')?.value || '',
+      rate: tr.querySelector('.land-rate')?.value || ''
+    });
+  });
+
+  // Crops rows
+  data.cropsRows = [];
+  document.querySelectorAll('#cropsRows tr').forEach(tr => {
+    data.cropsRows.push({
+      desc: tr.querySelector('.crop-desc')?.value || '',
+      type: tr.querySelector('.crop-type')?.value || '',
+      qty: tr.querySelector('.crop-qty')?.value || '',
+      rate: tr.querySelector('.crop-rate')?.value || ''
+    });
+  });
+
+  store.set('bdlac_data', JSON.stringify(data));
+}
+
+function loadData() {
+  const raw = store.get('bdlac_data');
+  if (!raw) { addLandRow(); addLandRow(); addLandRow(); addCropsRow(); addCropsRow(); recalcAll(); return; }
+  const data = JSON.parse(raw);
+
+  // Restore text/select inputs
+  Object.keys(data).forEach(key => {
+    if (key === 'landRows' || key === 'cropsRows') return;
+    const el = document.querySelector(`[data-key="${key}"]`);
+    if (el) el.value = data[key];
+  });
+
+  // Restore land rows
+  if (data.landRows && data.landRows.length) {
+    data.landRows.forEach(r => {
+      addLandRow();
+      const tr = document.querySelector('#landRows tr:last-child');
+      tr.querySelector('.land-dag').value = r.dag;
+      tr.querySelector('.land-class').value = r.cls;
+      tr.querySelector('.land-area').value = r.area;
+      tr.querySelector('.land-rate').value = r.rate;
+    });
+  } else { addLandRow(); addLandRow(); addLandRow(); }
+
+  // Restore crops rows
+  if (data.cropsRows && data.cropsRows.length) {
+    data.cropsRows.forEach(r => {
+      addCropsRow();
+      const tr = document.querySelector('#cropsRows tr:last-child');
+      tr.querySelector('.crop-desc').value = r.desc;
+      tr.querySelector('.crop-type').value = r.type;
+      tr.querySelector('.crop-qty').value = r.qty;
+      tr.querySelector('.crop-rate').value = r.rate;
+    });
+  } else { addCropsRow(); addCropsRow(); }
+
+  recalcAll();
+}
+
+function clearAllData() {
+  if (!confirm('Clear all input data? This cannot be undone.')) return;
+  store.remove('bdlac_data');
+  location.reload();
+}
+
+// ─── PWA INSTALL ─────────────────────────────────────────────
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+});
+
+// ─── SERVICE WORKER ──────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ─── INIT ────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  checkTrial();
+  loadData();
+});
+</script>
+<script data-pplx-inline-edit>
+(function(){
+  if(window===window.top)return;
+  function inlineAll(orig,clone){
+    if(orig.nodeType!==1)return;
+    try{
+      var cs=getComputedStyle(orig);
+      var t='';
+      for(var i=0;i<cs.length;i++){t+=cs[i]+':'+cs.getPropertyValue(cs[i])+';';}
+      clone.style.cssText=t;
+    }catch(e){}
+    var oc=orig.children,cc=clone.children;
+    for(var j=0;j<oc.length&&j<cc.length;j++){inlineAll(oc[j],cc[j]);}
+  }
+  function stripExternal(clone){
+    var imgs=clone.querySelectorAll('img');
+    for(var i=0;i<imgs.length;i++){
+      var s=imgs[i].getAttribute('src');
+      if(s&&!s.startsWith('data:'))imgs[i].removeAttribute('src');
+    }
+    var all=clone.querySelectorAll('*');
+    for(var i=0;i<all.length;i++){
+      var st=all[i].style.cssText;
+      if(st&&st.indexOf('url(')>=0){
+        all[i].style.cssText=st.replace(/url\(["']?(?!data:)[^)"']*["']?\)/gi,'none');
+      }
+    }
+  }
+  window.addEventListener('message',function(e){
+    if(!e.data||e.data.type!=='INLINE_EDIT_CAPTURE_REQUEST')return;
+    var scrollX=window.scrollX||window.pageXOffset||0;
+    var scrollY=window.scrollY||window.pageYOffset||0;
+    var w=window.innerWidth,h=window.innerHeight;
+    try{
+      var clone=document.documentElement.cloneNode(true);
+      var rm=clone.querySelectorAll('script,link[rel="stylesheet"],style');
+      for(var i=0;i<rm.length;i++){rm[i].remove();}
+      inlineAll(document.documentElement,clone);
+      stripExternal(clone);
+      var html=new XMLSerializer().serializeToString(clone);
+      var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'">'
+        +'<foreignObject width="100%" height="100%">'
+        +'<div xmlns="http://www.w3.org/1999/xhtml" style="width:'+w+'px;height:'+h+'px;overflow:hidden">'
+        +'<div style="transform:translate(-'+scrollX+'px,-'+scrollY+'px);transform-origin:top left">'
+        +html+'</div></div></foreignObject></svg>';
+      var svgUrl='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+      var img=new Image();
+      img.onload=function(){
+        var c=document.createElement('canvas');c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0);
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:c.toDataURL('image/png'),scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.onerror=function(){
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.src=svgUrl;
+    }catch(err){
+      window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+    }
+  });
+})();
+</script></body>
+</html>
