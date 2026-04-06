@@ -9,6 +9,8 @@
 <title>BD Land Acquisition Calculator</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.svg" type="image/svg+xml">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 /* ─── CSS RESET & VARIABLES ─── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -191,7 +193,7 @@ input,select,textarea,button{font-family:inherit;font-size:inherit}
   <div class="contact-box">
     <div class="dev-name">Md. Sadat Khan</div>
     <div class="dev-email">Developer &amp; Owner</div>
-    <div class="dev-email" style="margin-top:8px">Email: sadat7urp@gmail.com</div>
+    <div class="dev-email" style="margin-top:8px">Email: sadat7urp@gmail.com.com</div>
     <div class="dev-email">Phone: +880-1914-966141</div>
     <div style="font-size:.75rem;opacity:.6;margin-top:8px">After payment you will receive an unlock code</div>
   </div>
@@ -509,9 +511,9 @@ input,select,textarea,button{font-family:inherit;font-size:inherit}
     <div class="ref">Section 9(2) + Section 9(3), ARIPA 2017</div>
   </div>
 
-  <button class="btn btn-primary btn-block" onclick="window.print()" style="margin-top:12px">
+  <button class="btn btn-primary btn-block" onclick="exportPDF()" style="margin-top:12px">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-    Print / Export PDF
+    <span id="pdfBtnText">Export PDF</span>
   </button>
 
   <div class="card" style="margin-top:14px">
@@ -546,8 +548,8 @@ input,select,textarea,button{font-family:inherit;font-size:inherit}
     <div class="card-header">Developer &amp; Owner</div>
     <div class="card-body">
       <div class="info-row"><span class="label">Name</span><span class="value">Md. Sadat Khan</span></div>
-      <div class="info-row"><span class="label">Email</span><span class="value">sadat7urp@gmail.com</span></div>
-      <div class="info-row"><span class="label">Phone</span><span class="value">+880-1914-966141</span></div>
+      <div class="info-row"><span class="label">Email</span><span class="value">sadat.khan@example.com</span></div>
+      <div class="info-row"><span class="label">Phone</span><span class="value">+880-XXXX-XXXXXX</span></div>
     </div>
   </div>
 
@@ -929,6 +931,200 @@ window.addEventListener('beforeinstallprompt', e => {
 // ─── SERVICE WORKER ──────────────────────────────────────────
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ─── EXPORT PDF ─────────────────────────────────────────────
+function exportPDF() {
+  if (typeof window.jspdf === 'undefined') {
+    alert('PDF library is loading. Please try again in a moment.');
+    return;
+  }
+
+  const btn = document.getElementById('pdfBtnText');
+  btn.textContent = 'Generating...';
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    const PRIMARY   = [12, 78, 84];    // #0C4E54
+    const ACCENT    = [1, 105, 111];   // #01696F
+    const LIGHT     = [214, 239, 240]; // #D6EFF0
+    const WHITE     = [255, 255, 255];
+    const DARK      = [40, 37, 29];
+    const GOLD      = [255, 197, 83];
+    const MUTED     = [122, 121, 116];
+    const PAGE_W    = 210;
+    const MARGIN    = 14;
+    const COL_W     = PAGE_W - MARGIN * 2;
+    let y = 0;
+
+    // ── HEADER ──
+    doc.setFillColor(...PRIMARY);
+    doc.rect(0, 0, PAGE_W, 28, 'F');
+    doc.setTextColor(...WHITE);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('BD Land Acquisition Calculator', PAGE_W / 2, 11, { align: 'center' });
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text('The Acquisition and Requisition of Immovable Property Act, 2017 (ARIPA 2017)', PAGE_W / 2, 18, { align: 'center' });
+    doc.text('OFFICIAL COMPENSATION AWARD SUMMARY', PAGE_W / 2, 24, { align: 'center' });
+    y = 35;
+
+    // ── PROJECT INFO ──
+    const projData = [
+      ['Project Name',         getVal('projectName')   || '—'],
+      ['Organization',         getVal('organization')  || '—'],
+      ['District (Zila)',      getVal('district')      || '—'],
+      ['Upazila / Mouza',      getVal('upazila')       || '—'],
+      ['File Reference No.',   getVal('fileRef')       || '—'],
+      ['Section 4 Notice Date',getVal('noticeDate')    || '—'],
+      ['Award Date (Expected)',getVal('awardDate')     || '—'],
+      ['Acquisition Type',     getVal('acqType')       || 'Government'],
+      ['Compensation Multiplier', document.getElementById('multiplierDisplay').textContent],
+    ];
+
+    doc.setFillColor(...LIGHT);
+    doc.rect(MARGIN, y - 4, COL_W, 7, 'F');
+    doc.setTextColor(...PRIMARY);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('PROJECT INFORMATION', MARGIN + 2, y);
+    y += 5;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    projData.forEach(([label, value]) => {
+      doc.setTextColor(...MUTED);
+      doc.text(label + ':', MARGIN + 2, y);
+      doc.setTextColor(...DARK);
+      doc.setFont('helvetica', 'bold');
+      doc.text(String(value), MARGIN + 55, y);
+      doc.setFont('helvetica', 'normal');
+      y += 5.5;
+    });
+    y += 4;
+
+    // ── COMPENSATION BREAKDOWN TABLE ──
+    doc.setFillColor(...LIGHT);
+    doc.rect(MARGIN, y - 4, COL_W, 7, 'F');
+    doc.setTextColor(...PRIMARY);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('COMPENSATION BREAKDOWN', MARGIN + 2, y);
+    y += 3;
+
+    // Collect values
+    const mv         = parseFloat(document.getElementById('calcMV').textContent.replace(/[৳,\s]/g,'')) || 0;
+    const multTxt    = document.getElementById('calcMultLabel').textContent;
+    const landComp   = parseFloat(document.getElementById('calcLandComp').textContent.replace(/[৳,\s]/g,'')) || 0;
+    const crops      = parseFloat(document.getElementById('calcCrops').textContent.replace(/[৳,\s]/g,'')) || 0;
+    const sev        = parseFloat(document.getElementById('calcSev').textContent.replace(/[৳,\s]/g,'')) || 0;
+    const rel        = parseFloat(document.getElementById('calcRel').textContent.replace(/[৳,\s]/g,'')) || 0;
+    const dmgSub     = parseFloat(document.getElementById('calcDmgSub').textContent.replace(/[৳,\s]/g,'')) || 0;
+    const enhanced   = parseFloat(document.getElementById('calcEnhanced').textContent.replace(/[৳,\s]/g,'')) || 0;
+    const grand      = parseFloat(document.getElementById('calcGrandTotal').textContent.replace(/[৳,\s]/g,'')) || 0;
+
+    const rows = [
+      ['1', 'Market Value of All Parcels',        'Sec 9(1)(a)',    formatBDT(mv)],
+      ['2', 'Land Compensation (MV x ' + multTxt + ')', 'Sec 9(2)', formatBDT(landComp)],
+      ['3', 'Crops, Trees & Structures',           'Sec 9(1)(b)',   formatBDT(crops)],
+      ['4', 'Severance & Injurious Affection',     'Sec 9(1)(c)(d)',formatBDT(sev)],
+      ['5', 'Relocation Expenses',                 'Sec 9(1)(e)',   formatBDT(rel)],
+      ['6', 'Sub-total Damages (3+4+5)',            'Sec 9(1)(b-e)', formatBDT(dmgSub)],
+      ['7', 'Enhanced Damages (x200%)',             'Sec 9(3)',      formatBDT(enhanced)],
+    ];
+
+    doc.autoTable({
+      startY: y,
+      margin: { left: MARGIN, right: MARGIN },
+      head: [['#', 'Component', 'Legal Basis', 'Amount (BDT)']],
+      body: rows,
+      styles: { fontSize: 8.5, cellPadding: 3, textColor: DARK },
+      headStyles: { fillColor: PRIMARY, textColor: WHITE, fontStyle: 'bold', fontSize: 8.5 },
+      columnStyles: {
+        0: { cellWidth: 8,  halign: 'center' },
+        1: { cellWidth: 82 },
+        2: { cellWidth: 28, halign: 'center', textColor: ACCENT },
+        3: { cellWidth: 36, halign: 'right',  fontStyle: 'bold' },
+      },
+      alternateRowStyles: { fillColor: [247, 246, 242] },
+      rowPageBreak: 'auto',
+    });
+
+    y = doc.lastAutoTable.finalY + 4;
+
+    // ── GRAND TOTAL BAR ──
+    doc.setFillColor(...PRIMARY);
+    doc.rect(MARGIN, y, COL_W, 16, 'F');
+    doc.setTextColor(...WHITE);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text('TOTAL COMPENSATION AWARD  |  Section 9(2) + Section 9(3), ARIPA 2017', PAGE_W / 2, y + 5, { align: 'center' });
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.text(formatBDT(grand), PAGE_W / 2, y + 13, { align: 'center' });
+    y += 24;
+
+    // ── LAND PARCELS TABLE ──
+    const landRows = [];
+    document.querySelectorAll('#landRows tr').forEach((tr, i) => {
+      const dag   = tr.querySelector('.land-dag')?.value  || '';
+      const cls   = tr.querySelector('.land-class')?.value || '';
+      const area  = tr.querySelector('.land-area')?.value  || '';
+      const rate  = tr.querySelector('.land-rate')?.value  || '';
+      const val   = tr.querySelector('.land-value')?.textContent || '0';
+      if (area || dag) landRows.push([i+1, dag, cls, area + ' Dec.', 'BDT ' + rate, 'BDT ' + val]);
+    });
+
+    if (landRows.length > 0) {
+      if (y > 220) { doc.addPage(); y = 20; }
+      doc.setFillColor(...LIGHT);
+      doc.rect(MARGIN, y - 4, COL_W, 7, 'F');
+      doc.setTextColor(...PRIMARY);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text('LAND PARCELS — Section 9(1)(a)', MARGIN + 2, y);
+      y += 3;
+
+      doc.autoTable({
+        startY: y,
+        margin: { left: MARGIN, right: MARGIN },
+        head: [['#', 'Dag/Plot', 'Classification', 'Area', 'Rate/Dec.', 'Market Value']],
+        body: landRows,
+        styles: { fontSize: 8, cellPadding: 2.5, textColor: DARK },
+        headStyles: { fillColor: ACCENT, textColor: WHITE, fontStyle: 'bold', fontSize: 8 },
+        columnStyles: { 5: { halign: 'right', fontStyle: 'bold' } },
+        alternateRowStyles: { fillColor: [247, 246, 242] },
+      });
+      y = doc.lastAutoTable.finalY + 6;
+    }
+
+    // ── FOOTER ──
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let p = 1; p <= pageCount; p++) {
+      doc.setPage(p);
+      doc.setFillColor(...PRIMARY);
+      doc.rect(0, 287, PAGE_W, 10, 'F');
+      doc.setTextColor(...WHITE);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.text('BD Land Acquisition Calculator  |  ARIPA 2017, Bangladesh  |  Developer: Md. Sadat Khan', MARGIN, 293);
+      doc.text('Page ' + p + ' of ' + pageCount + '  |  Generated: ' + new Date().toLocaleDateString('en-GB'), PAGE_W - MARGIN, 293, { align: 'right' });
+    }
+
+    // ── SAVE ──
+    const proj   = getVal('projectName') || 'Award';
+    const fname  = 'Land-Acquisition-Award-' + proj.replace(/[^a-zA-Z0-9]/g, '-') + '.pdf';
+    doc.save(fname);
+
+  } catch(e) {
+    console.error('PDF error:', e);
+    alert('PDF generation failed: ' + e.message);
+  } finally {
+    btn.textContent = 'Export PDF';
+  }
 }
 
 // ─── INIT ────────────────────────────────────────────────────
